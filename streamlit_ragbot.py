@@ -7,12 +7,8 @@ from datetime import datetime
 import uuid
 
 # Fix for ChromaDB on Streamlit Cloud
-try:
-    import pysqlite3
-    sys.modules['sqlite3'] = pysqlite3
-except ImportError:
-    # pysqlite3 not available (local development)
-    pass
+import pysqlite3
+sys.modules['sqlite3'] = pysqlite3
 
 import chromadb
 from openai import AzureOpenAI
