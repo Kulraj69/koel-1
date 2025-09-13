@@ -1,11 +1,17 @@
 import streamlit as st
-import chromadb
 import os
-from openai import AzureOpenAI
-import uuid
+import sys
 from typing import List, Dict, Any
 import pandas as pd
 from datetime import datetime
+import uuid
+
+# Fix for ChromaDB on Streamlit Cloud
+import pysqlite3
+sys.modules['sqlite3'] = pysqlite3
+
+import chromadb
+from openai import AzureOpenAI
 
 # Page configuration
 st.set_page_config(
@@ -37,12 +43,23 @@ class RAGBot:
     def initialize_clients(self):
         """Initialize ChromaDB and Azure OpenAI clients"""
         try:
-            # Initialize ChromaDB client
-            self.chroma_client = chromadb.CloudClient(
-                api_key=CHROMADB_API_KEY,
-                tenant=CHROMADB_TENANT,
-                database=CHROMADB_DATABASE
-            )
+            # Initialize ChromaDB client with retry logic
+            import time
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.chroma_client = chromadb.CloudClient(
+                        api_key=CHROMADB_API_KEY,
+                        tenant=CHROMADB_TENANT,
+                        database=CHROMADB_DATABASE
+                    )
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        st.warning(f"ChromaDB connection attempt {attempt + 1} failed, retrying...")
+                        time.sleep(2)
+                    else:
+                        raise e
             
             # Initialize Azure OpenAI client
             self.azure_client = AzureOpenAI(
